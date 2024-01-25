@@ -516,6 +516,8 @@ SELECT
 FROM
 	EMP e;
 
+
+--실습1
 SELECT
 	EMPNO,
 	ENAME,
@@ -532,11 +534,298 @@ FROM
 SELECT
 	EMPNO,
 	ENAME,
-	HIREDATE,
+	HIREDATE,MGR,
 	NEXT_DAY(ADD_MONTHS(HIREDATE,3),'월요일') AS R_JOB,
 	NVL(TO_CHAR(COMM),'N/A') AS COMM
 FROM
 	EMP;
+
+--실습3
+--SUBSTR(TO_CHAR(MGR),1,2)
+SELECT EMPNO , ENAME, MGR,
+      CASE
+	   WHEN MGR IS NULL THEN '0000'
+	   WHEN SUBSTR(TO_CHAR(MGR),1,2) = '75' THEN '5555'
+	   WHEN SUBSTR(TO_CHAR(MGR),1,2) = '76' THEN '6666'
+	   WHEN SUBSTR(TO_CHAR(MGR),1,2) = '77' THEN '7777'
+	   WHEN SUBSTR(TO_CHAR(MGR),1,2) = '78' THEN '8888'
+	   ELSE TO_CHAR(MGR)
+	   END AS CHG_MGR
+ FROM EMP e ;
+
+SELECT
+	EMPNO ,
+	ENAME,
+	MGR,
+	DECODE(SUBSTR(TO_CHAR(MGR), 1, 2), NULL, '0000', '75', '5555', '76', '6666', '77', '7777', '78', '8888', SUBSTR(TO_CHAR(MGR), 1))AS CHG_MGR
+FROM
+	EMP;
+
+SELECT EMPNO , ENAME, MGR,
+      CASE SUBSTR(TO_CHAR(NVL(MGR,0)),1,2)
+	   WHEN '0'  THEN '0000'
+	   WHEN '75' THEN '5555'
+	   WHEN '76' THEN '6666'
+	   WHEN '77' THEN '7777'
+	   WHEN '78' THEN '8888'
+	   ELSE TO_CHAR(MGR)
+	   END AS CHG_MGR
+ FROM EMP e ;
+
+--다중 행 함수
+--SUM(),AVG(),COUNT(),MAX(),MIN()
+
+--단일그룹의 그룹 함수가 아닙니다(여러 행이 나올 수 있는 컬럼을 추가한 경우)
+SELECT SUM(SAL), AVG(SAL), COUNT(SAL), MAX(SAL), MIN(SAL)
+FROM EMP;
+
+--동일한 급여를 하나만 선택해서 합계
+SELECT SUM(DISTINCT SAL)
+FROM EMP;
+
+--
+SELECT COUNT(*)
+FROM EMP e ;
+
+--부서번호가 30인 사원 수 출력
+SELECT COUNT(*)
+FROM EMP e 
+WHERE DEPTNO = 30;
+
+--부서번호가 30인 사원중에서 급여의 최댓값
+SELECT MAX(SAL)
+FROM EMP e 
+WHERE DEPTNO = 30;
+
+--부서번호가 20인 사원의 입사일 중에서 제일 최근 입사일 조회
+SELECT MAX(HIREDATE)
+FROM EMP
+WHERE DEPTNO = 20;
+
+--부서번호가 30인 사원 중에서 SAL 중복값 제거한 후 평균 구하기
+SELECT AVG(DISTINCT SAL)
+FROM EMP e 
+WHERE DEPTNO = 20 ;
+
+--부서별 급여 합계
+SELECT '10' AS DEPTNO , SUM(SAL)
+FROM EMP e 
+WHERE DEPTNO = 10
+UNION
+SELECT '20' AS DEPTNO ,SUM(SAL)
+FROM EMP e 
+WHERE DEPTNO = 20
+UNION
+SELECT '30' AS DEPTNO ,SUM(SAL)
+FROM EMP e 
+WHERE DEPTNO = 30;
+
+--결과 값을 원하는 열로 묶기 : GROUP BY
+--SELECT 보고싶은 컬럼(열이름)            ①
+--FROM 테이블명                           ②
+--WHERE 조건을 나열                       ③
+--GROUP BY 그룹화할 열 이름               ④
+--ORDER BY 정렬 조건                      ⑤
+
+--GROUP BY 표현식이 아닙니다
+--GROUP BY 옆에 오는 컬럼만 SELECT 절에 사용가능
+
+--실행순서
+-- ② --> ③ --> GROUP BY --> HAVING --> ① --> ⑤
+
+SELECT DEPTNO ,SUM(SAL)
+FROM EMP e 
+GROUP BY DEPTNO ;
+
+--부서별 급여 평균
+SELECT DEPTNO, AVG(SAL)
+FROM EMP e 
+GROUP BY DEPTNO ;
+
+--부서번호, 직무별 급여 평균
+SELECT DEPTNO ,JOB, AVG(SAL)
+FROM EMP e 
+GROUP BY DEPTNO ,JOB 
+ORDER BY DEPTNO ;
+
+--HAVING : GROUP BY 절에 조건을 사용할 때
+--부서별 직책의 평균 급여가 500 이상인 사원들의 부서번호, 직책, 부서별 직책 평균급여
+
+SELECT DEPTNO , JOB ,AVG(SAL)
+FROM EMP e 
+GROUP BY DEPTNO , JOB HAVING AVG(SAL) >= 500
+ORDER BY DEPTNO ,JOB ; 
+
+SELECT DEPTNO , JOB ,AVG(SAL)
+FROM EMP e 
+WHERE SAL <= 3000
+GROUP BY DEPTNO , JOB HAVING AVG(SAL) >= 2000
+ORDER BY DEPTNO ,JOB ; 
+
+--같은 직무에 종사하는 사원이 3명 이상인 직무와 인원수 조회
+SELECT JOB ,COUNT(JOB)
+FROM EMP e 
+GROUP BY JOB HAVING  COUNT(JOB)>= 3
+ORDER BY JOB ; 
+
+--사원들의 입사연도를 기준으로 부서별 몇명이 입사했는지 조회
+--1981 10 3
+
+SELECT TO_CHAR(HIREDATE,'YYYY')AS HIRE_YEAR,DEPTNO , COUNT(*)AS 인원수
+FROM EMP e 
+GROUP BY TO_CHAR(HIREDATE,'YYYY'),DEPTNO 
+ORDER BY DEPTNO ;
+
+--JOIN : 여러 테이블을 하나의 테이블 처럼 사용
+--1) 내부조인(일치하는 값이 있는 경우)
+
+--EMP와 DEPT 조인
+SELECT *
+FROM EMP e, DEPT d
+WHERE e.DEPTNO = d.DEPTNO;
+
+--열의 정의가 애매합니다(조인 할 경우 테이블에 동일한 컬럼명이 존재하는 경우)
+SELECT e.ENAME, e.SAL,d.DEPTNO, d.DNAME , d.LOC 
+FROM EMP e, DEPT d
+WHERE e.DEPTNO = d.DEPTNO;
+
+--JOIN 조건이 없을때 나올 수 있는 모든 조합이 결과로 나옴
+SELECT e.ENAME, e.SAL,d.DEPTNO, d.DNAME , d.LOC 
+FROM EMP e, DEPT d
+
+
+SELECT e.ENAME, e.SAL,d.DEPTNO, d.DNAME , d.LOC 
+FROM EMP e INNER JOIN DEPT d ON e.DEPTNO = d.DEPTNO
+WHERE e.SAL >= 3000;
+
+
+-- EMP, SALGADE 조인
+SELECT *
+FROM EMP e, SALGRADE s
+WHERE e.SAL BETWEEN s.LOSAL AND s.HISAL;
+
+--EMP, EMP 조인(SELF 조인)
+SELECT e.EMPNO, e.ENAME, e.MGR, e2.ENAME AS MGR_NAME
+FROM EMP e , EMP e2 
+WHERE e.MGR = e2.EMPNO ;
+
+
+--2) 외부조인
+--(1) 왼쪽 외부조인 : LEFT OUTER JOIN
+--(2) 오른쪽 외부조인 RIGHT OUTER JOIN
+
+SELECT e.EMPNO, e.ENAME, e.MGR, e2.ENAME AS MGR_NAME
+FROM EMP e LEFT OUTER JOIN  EMP e2 ON e.MGR = e2.EMPNO ;
+
+
+
+SELECT e.EMPNO, e.ENAME, e.MGR, e2.ENAME AS MGR_NAME
+FROM EMP e RIGHT OUTER JOIN  EMP e2 ON e.MGR = e2.EMPNO ;
+
+
+--각 부서별 평균급여, 최대급여, 최소급여, 사원수
+--부서번호,부서명, 평균급여,최대급여,최소급여, 사원순
+SELECT e.DEPTNO, d.DNAME ,MIN(SAL), MAX(SAL),MIN(SAL),COUNT(*)
+FROM EMP e JOIN DEPT d ON e.DEPTNO = d.DEPTNO
+GROUP BY e.DEPTNO , d.DNAME;
+
+--세 개의 테이블 조인하기
+SELECT
+	*
+FROM
+	EMP e1
+JOIN EMP e2 ON
+	e1.EMPNO = e2.EMPNO
+JOIN EMP e3 ON
+	e2.EMPNO = e3.EMPNO;
+
+--모든 부서 정보와 사원 정보를 출력
+--부서번호, 사원 이름 순으로 정렬하여 출력
+--부서번호, 부서명, 사원번호, 사원명, 직무명, 급여
+--DEPT 테이블 기준 출력
+
+SELECT d.DEPTNO , d.DNAME , e.EMPNO, e.ENAME, e.JOB, e.SAL
+FROM DEPT d LEFT OUTER JOIN EMP e ON d.DEPTNO = e.DEPTNO 
+ORDER BY d.DEPTNO , e.ENAME ;
+
+SELECT d.DEPTNO , d.DNAME , e.EMPNO, e.ENAME, e.JOB, e.SAL
+FROM EMP e RIGHT OUTER JOIN DEPT d  ON d.DEPTNO = e.DEPTNO 
+ORDER BY d.DEPTNO , e.ENAME ;
+
+--모든 부서 정보와 사원 정보를 출력
+--부서번호, 사원 이름 순으로 정렬하여 출력
+--부서번호, 부서명, 사원번호, 사원명, 직무명, 급여, LOSAL,HISAL,GRADE
+--DEPT 테이블 기준 출력
+
+SELECT
+	d.DEPTNO ,
+	d.DNAME ,
+	e.EMPNO,
+	e.ENAME,
+	e.JOB,
+	e.SAL,
+	s.LOSAL ,
+	s.HISAL ,
+	s.GRADE
+FROM
+	EMP e
+RIGHT OUTER JOIN DEPT d ON
+	d.DEPTNO = e.DEPTNO
+LEFT OUTER JOIN
+	SALGRADE s
+	ON
+	e.SAL BETWEEN s.LOSAL AND s.HISAL
+ORDER BY
+	d.DEPTNO ,
+	e.ENAME ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
