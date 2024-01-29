@@ -415,3 +415,29 @@ FROM EMPLOYEES e
 WHERE DEPARTMENT_ID IN(SELECT DEPARTMENT_ID 
 FROM DEPARTMENTS d  
 WHERE d.LOCATION_ID = 1700))
+
+--FULL SCAN
+SELECT * FROM EMPLOYEES e WHERE FIRST_NAME = 'Jack';
+
+--테이블 생성 - 구조, 데이터 복사
+CREATE TABLE idx_employees AS SELECT DISTINCT FIRST_NAME, LAST_NAME, HIRE_DATE FROM EMPLOYEES e ;
+
+--INDEX 생성
+CREATE INDEX idx_name ON idx_employees(first_name);
+--INDEX 사용해서 조회 = RANGE SCAN
+SELECT * FROM idx_employees e WHERE FIRST_NAME = 'Jack';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
